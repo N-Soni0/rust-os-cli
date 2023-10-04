@@ -1,39 +1,32 @@
-use std::{env, process};
+use args::{Cli, Commands};
+use clap::Parser;
 
+mod args;
 mod cat;
 mod echo;
-mod grep;
 mod ls;
+mod grep;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let args = Cli::parse();
 
-    let command: &str = args.get(1).unwrap_or_else(|| process::exit(1));
+    let command = args.command.expect("Command not valid");
 
     match command {
-        "echo" => {
-            let input: &str = &args[2..].join(" ");
+        Commands::Cat { path } => {
+            cat::run(cat::Config { file_path: path })
+        },
 
-            echo::run(echo::Config::new(input.to_owned()));
-        }
-        "cat" => {
-            let file_path = args.get(2).unwrap_or_else(|| process::exit(1));
+        Commands::Echo { text } => { 
+            echo::run(echo::Config { input: text })
+        },
 
-            cat::run(cat::Config::new(file_path.to_owned()));
-        }
-        "ls" => {
+        Commands::Ls => { 
             ls::run();
-        }
-        "grep" => {
-            if args.len() == 4 {
-                let (file_path, query) = (
-                    args.get(2).unwrap_or_else(|| process::exit(1)),
-                    args.get(3).unwrap_or_else(|| process::exit(1)),
-                );
+        },
 
-                grep::run(grep::Config::new(file_path.to_owned(), query.to_owned()));
-            }
-        }
-        _ => panic!("No such command"),
+        Commands::Grep { file_path,query } => { 
+            grep::run(grep::Config::new(file_path, query))
+        },
     }
 }
